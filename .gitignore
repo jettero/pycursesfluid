@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+.pytest_cache
+.setup-*
+*.egg-info
+build
+dist
+.eggs
+pcf/version.py
+p
+*.orig
+*.rej
+*.log
+.pip-*
+venv
