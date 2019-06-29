@@ -1,0 +1,28 @@
+# vi:ft=systemd:
+[Unit]
+After=jackd.service
+BindsTo=jackd.service
+
+[Service]
+Nice=-7
+Type=simple
+
+ExecStart=/sbin/fluidsynth --server --no-shell \
+    -o "shell.port=9800" \
+    --connect-jack-outputs --gain 1 \
+    --sample-rate=48000 \
+    --audio-driver=jack \
+    --audio-bufcount=2 \
+    --audio-bufsize=64 \
+     /usr/share/soundfonts/FluidR3_GM.sf2 \
+     /usr/share/soundfonts/freepats-general-midi.sf2 \
+     /usr/share/soundfonts/FluidR3_GS.sf2
+# /home/jettero/soundfonts/piano1.sf2
+
+ExecStartPost=/sbin/sleep 2
+ExecStartPost=/home/jettero/.config/systemd/user/connect-helper.py hammer fluid
+
+Restart=always
+
+[install]
+WantedBy=default.target

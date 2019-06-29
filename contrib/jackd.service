@@ -1,0 +1,12 @@
+[Unit]
+Description=jackd
+Wants=fluidsynth.service
+
+[Service]
+Nice=-7
+Type=simple
+ExecStart=/sbin/jackd --realtime -dalsa -r48000 -p512 -n2 -s -Xseq -D -Chw:H88 -Phw:Intel
+Restart=always
+
+[install]
+WantedBy=default.target
