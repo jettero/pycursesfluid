@@ -55,10 +55,19 @@ class FluidSynth:
                 ret.append(hm.as_ntuple(name=name))
         return sorted(ret, key=lambda x: int(x.id))
 
+    @property
+    def channels(self):
+        hm = HandyMatch(r'^\s*chan\s+(?P<chan>\d+),\s*(?P<name>.+?)\s*$')
+        ret = list()
+        for cl in self.send('channels').splitlines():
+            if hm(cl):
+                ret.append(hm.as_ntuple())
+        return ret
+
     def select(self, sfont=None, bank=None, prog=None, chan=0):
         if isinstance(sfont, tuple):
             sfont,bank,prog = sfont.font, sfont.bank, sfont.prog
-        return self.send(f'select {chan} {sfont} {bank} {prog}')
+        self.send(f'select {chan} {sfont} {bank} {prog}')
 
     @property
     def instruments(self):
