@@ -1,4 +1,11 @@
 # coding: utf-8
 
+from .jack import Jack
+
 def run():
-    print("nothing to do here yet")
+    j = Jack()
+    j.start()
+    j.poll()
+    j.log_status()
+
+    print('need more things to do')
