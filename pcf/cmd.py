@@ -6,6 +6,8 @@ def run():
     j = Jack()
     j.start()
     j.poll()
-    j.log_status()
+
+    f = Fluid()
+    f.start()
 
     print('need more things to do')
