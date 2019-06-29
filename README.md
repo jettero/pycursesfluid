@@ -15,3 +15,12 @@ turn of the millenium or thereabouts.
 It must be the synth for my M-Audio Hammer 88.
 
 Synth or Bust.
+
+# Control jackd/fluidsynth or … not
+
+Originally I was planning to manage jackd and fluidsynth; but I think that's a
+mistake some of the other user interfaces made (dabbling in things they don't
+need to do).
+
+Let's let systemd (or whatever) manage jackd and fluidsynth and just focus on
+the UI for selecting instruments volume controls and things.

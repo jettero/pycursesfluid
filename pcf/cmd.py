@@ -1,13 +1,7 @@
 # coding: utf-8
 
-from .jack import Jack
-
 def run():
-    j = Jack()
-    j.start()
-    j.poll()
+    pass
 
-    f = Fluid()
-    f.start()
-
-    print('need more things to do')
+if __name__ == '__main__':
+    run()
