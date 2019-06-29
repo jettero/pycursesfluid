@@ -1,0 +1,8 @@
+# vi:ft=python:
+# coding: utf-8
+
+import logging
+from pcf.jack import Jack
+
+log = logging.getLogger('ipython')
+logging.basicConfig(level=logging.DEBUG)
