@@ -64,10 +64,10 @@ class FluidSynth:
                 ret.append(hm.as_ntuple())
         return ret
 
-    def select(self, sfont=None, bank=None, prog=None, chan=0):
-        if isinstance(sfont, tuple):
-            sfont,bank,prog = sfont.font, sfont.bank, sfont.prog
-        self.send(f'select {chan} {sfont} {bank} {prog}')
+    def select(self, font=None, bank=None, prog=None, chan=0):
+        if isinstance(font, tuple):
+            font,bank,prog = font.font, font.bank, font.prog
+        self.send(f'select {chan} {font} {bank} {prog}')
 
     @property
     def instruments(self):
@@ -76,5 +76,5 @@ class FluidSynth:
         for font in self.fonts:
             for il in self.send(f'inst {font.id}').splitlines():
                 if hm(il):
-                    ret.append(hm.as_ntuple(font=font.id))
+                    ret.append(hm.as_ntuple('name', 'font', 'bank', 'prog', font=font.id))
         return sorted(ret, key=lambda x: (int(x.font), int(x.bank), int(x.prog)))
