@@ -6,22 +6,25 @@ from collections import namedtuple
 import re
 
 class RangySet(set):
-    def as_ranges(self):
+    def as_ranges(self, wrap=int):
         r = list()
         l = sorted(self)
         if not l:
             return r
 
-        b = e = l.pop(0)
+        def wp():
+            return wrap(l.pop(0))
+
+        b = e = wp()
         while l:
             if e+1 == l[0]:
-                e = l.pop(0)
+                e = wp()
             elif e == b:
                 r.append( (b,) )
-                b = e = l.pop(0)
+                b = e = wp()
             else:
                 r.append( (b,e) )
-                b = e = l.pop(0)
+                b = e = wp()
         if None not in (b,e):
             if b == e:
                 r.append( (b,) )
