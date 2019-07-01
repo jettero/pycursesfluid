@@ -35,21 +35,31 @@ class HandyMatch:
     def __init__(self, pat):
         self.pat = re.compile(pat)
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}[{self.pat.pattern}]'
+
+    def check_called(self):
+        if None in (self.g, self.gd):
+            raise ValueError(f'{self} never called or failed to match on last call')
+
     def __getitem__(self, i):
+        self.check_called()
         if self.gd and i in self.gd:
             return self.gd[i]
         if self.g and 0 < i < len(self.g):
             return self.g[i]
 
     def __iter__(self):
+        self.check_called()
         yield from self.g
 
     def as_ntuple(self, *a, **kw):
-        x = self.gd.copy()
-        x.update(**kw)
+        self.check_called()
+        ret = self.gd.copy()
+        ret.update(**kw)
         if not a:
-            a = sorted(x)
-        return namedtuple('HMR', a)(**x)
+            a = sorted(ret)
+        return namedtuple('HMR', a)(*[ret.get(i) for i in a])
 
     def __call__(self, line):
         if isinstance(line, (bytes,bytearray)):
