@@ -43,3 +43,12 @@ def test_hm_raises():
         tuple(hm)
     with pytest.raises(ValueError):
         hm.as_ntuple()
+
+def test_hm_takes_user_input_for_named_tuples():
+    hm = HandyMatch(r'(?P<n>a)(?P<m>ba)')
+    assert hm('aba')
+    nt = hm.as_ntuple('z','m','n', z='blarg')
+    assert nt == ('blarg','ba','a')
+    assert nt.z == 'blarg'
+    assert nt.m == 'ba'
+    assert nt.n == 'a'
