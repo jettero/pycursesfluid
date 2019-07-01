@@ -41,6 +41,9 @@ class HandyMatch:
         if self.g and 0 < i < len(self.g):
             return self.g[i]
 
+    def __iter__(self):
+        yield from self.g
+
     def as_ntuple(self, *a, **kw):
         x = self.gd.copy()
         x.update(**kw)
