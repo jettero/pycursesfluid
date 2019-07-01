@@ -5,6 +5,30 @@ from itertools import zip_longest
 from collections import namedtuple
 import re
 
+class RangySet(set):
+    def as_ranges(self):
+        r = list()
+        l = sorted(self)
+        if not l:
+            return r
+
+        b = e = l.pop(0)
+        while l:
+            if e+1 == l[0]:
+                e = l.pop(0)
+            elif e == b:
+                r.append( (b,) )
+                b = e = l.pop(0)
+            else:
+                r.append( (b,e) )
+                b = e = l.pop(0)
+        if None not in (b,e):
+            if b == e:
+                r.append( (b,) )
+            else:
+                r.append( (b,e) )
+        return r
+
 class PathItem:
     attrlist = ('a', 'b', 'c') # just an example, overload this
 
