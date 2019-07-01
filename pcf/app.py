@@ -1,49 +1,63 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from pcf.fluidsynth import FluidSynth
 import urwid
+import time
+from pcf.fluidsynth import FluidSynth
+from pcf.misc import PathItem
 
-class FluidInstrumentWidget(urwid.TreeWidget):
+FluidSynthObj = None
+def get_fso():
+    global FluidSynthObj
+    if FluidSynthObj is None:
+        FluidSynthObj = FluidSynth()
+    return FluidSynthObj
+
+InstTree_t = InstTree = None
+def get_tree(*k, cache_timeout=1):
+    global InstTree_t, InstTree
+    now = time.time()
+    if InstTree is None or (now - InstTree_t) >= cache_timeout:
+        InstTree = dict()
+        InstTree['/'] = top = FluidNode('FluidSynth')
+        fso = get_fso()
+        for font,name,path in fso.fonts:
+            n = FluidNode(path, font, parent=top)
+            InstTree[n.path] = n
+        for name,font,bank,prog in fso.instruments:
+            fp = f'/{font}'
+            bp = fp + f'/{bank}'
+            if bp not in InstTree:
+                InstTree[bp] = FluidNode(f'Bank-{bank}', font,bank, parent=InstTree[fp])
+            n = FluidNode(name, font,bank,prog, parent=InstTree[bp])
+            InstTree[n.path] = n
+        InstTree_t = now
+    if k:
+        return tuple( InstTree.get(x) for x in k )
+    return InstTree
+
+class FluidWidget(urwid.TreeWidget):
     pass
 
-class FluidInstrumentNode(urwid.TreeNode):
-    def __init__(self, name, font=None, bank=None, prog=None):
-        self.name = name
-        self.font = font
-        self.bank = bank
-        self.prog = prog
-        super().__init__(name, key=self.get_key(), parent=None, depth=0)
+class FluidNode(urwid.ParentNode, PathItem):
+    attrlist = ('name', 'font', 'bank', 'prog')
 
-    def load_parent(self):
-        pass
+    def __init__(self, name='FluidSynth', font=None, bank=None, prog=None, parent=None):
+        PathItem.__init__(self, font, bank, prog)
+        urwid.ParentNode.__init__(self, name, key=self.path, parent=parent)
+        self.kids = list()
 
     def load_child_keys(self):
-        return tuple()
+        return tuple( k for k,v in get_tree().items() if str(v.get_parent()) == str(self) )
 
     def load_child_node(self, key):
-        ks = key.split('/')
-        kw = { k:v for k,v in zip(ks[1:], ('name', 'font','bank','prog')) }
-        return FluidSynthNode(**kw)
+        return get_tree(key)[0]
 
     def load_widget(self):
-        return FluidInstrumentWidget(self)
+        return FluidWidget(self)
 
     def get_key(self):
-        ret = list()
-        if self.font is not None:
-            ret.append(str(self.font))
-            if self.bank is not None:
-                ret.append(str(self.bank))
-                if self.prog is not None:
-                    ret.append(str(self.prog))
-        return f'/{self.name}' + '/'.join(ret)
-
-
-class FluidSynthNode(FluidInstrumentNode):
-    def __init__(self):
-        self.F = FluidSynth()
-        super().__init__('FluidSynth')
+        return self.path
 
 class PCFApp:
     palette = [ ('body', 'light gray', 'default'),
@@ -54,7 +68,7 @@ class PCFApp:
     def __init__(self):
         self.header = urwid.Text('header')
         self.footer = urwid.Text('footer')
-        self.listbox = urwid.TreeListBox(urwid.TreeWalker(FluidSynthNode()))
+        self.listbox = urwid.TreeListBox(urwid.TreeWalker(FluidNode()))
         self.view = urwid.Frame(
             urwid.AttrWrap(self.listbox, 'body'),
             header=urwid.AttrWrap(self.header, 'head'),
