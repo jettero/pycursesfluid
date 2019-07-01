@@ -1,8 +1,33 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from itertools import zip_longest
 from collections import namedtuple
 import re
+
+class PathItem:
+    attrlist = ('a', 'b', 'c') # just an example, overload this
+
+    def __init__(self, *args):
+        for i,j in zip_longest(self.attrlist, args[:len(self.attrlist)]):
+            setattr(self, i, j)
+
+    def __iter__(self):
+        for i in self.attrlist:
+            v = getattr(self, i)
+            if v is None:
+                break
+            yield v
+
+    def __str__(self):
+        return '/' + '/'.join(str(x) for x in self)
+
+    def __repr__(self):
+        return f'PathItem[{str(self)}]'
+
+    @property
+    def path(self):
+        return str(self)
 
 class HandyMatch:
     pat = g = gd = None
