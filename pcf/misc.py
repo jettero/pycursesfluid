@@ -10,10 +10,14 @@ class PathItem:
 
     def __init__(self, *args):
         for i,j in zip_longest(self.attrlist, args[:len(self.attrlist)]):
+            if i.startswith('!'):
+                i = i[1:]
             setattr(self, i, j)
 
     def __iter__(self):
         for i in self.attrlist:
+            if i.startswith('!'):
+                continue
             v = getattr(self, i)
             if v is None:
                 break

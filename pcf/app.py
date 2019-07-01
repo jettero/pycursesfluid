@@ -12,11 +12,15 @@ def get_fso():
         FluidSynthObj = FluidSynth()
     return FluidSynthObj
 
-def fetch_instrument_tree():
-    global InstTree
+ChanList = InstTree = None
+def fetch_current_state():
+    global InstTree, ChanList
+    fso = get_fso()
+
+    ChanList = fso.channels
+
     InstTree = dict()
     InstTree['/'] = top = FluidNode('FluidSynth')
-    fso = get_fso()
     for font,name,path in fso.fonts:
         n = FluidNode(path, font, parent=top)
         InstTree[n.path] = n
@@ -27,17 +31,23 @@ def fetch_instrument_tree():
             InstTree[bp] = FluidNode(f'Bank-{bank}', font,bank, parent=InstTree[fp])
         n = FluidNode(name, font,bank,prog, parent=InstTree[bp])
         InstTree[n.path] = n
-InstTree = None
 
 class FluidWidget(urwid.TreeWidget):
-    unexpanded_icon = urwid.AttrMap(urwid.TreeWidget.unexpanded_icon, 'dirmark')
-    expanded_icon = urwid.AttrMap(urwid.TreeWidget.expanded_icon, 'dirmark')
-
     def __init__(self, node):
         super().__init__(node)
         self._w = urwid.AttrWrap(self._w, None)
         self.flagged = False
         self.update_w()
+
+    def get_display_text(self):
+        n = self.get_node()
+        if n.prog is not None:
+            return ('inst', n.name)
+        if n.bank is not None:
+            return ('bank', n.name)
+        if n.font is not None:
+            return ('font', n.name)
+        return ('body', n.name)
 
     def selectable(self):
         return True
@@ -64,14 +74,11 @@ class FluidWidget(urwid.TreeWidget):
             self._w.focus_attr = 'focus'
 
 class FluidNode(urwid.ParentNode, PathItem):
-    attrlist = ('name', 'font', 'bank', 'prog')
+    attrlist = ('!name', 'font', 'bank', 'prog')
 
     def __init__(self, name='FluidSynth', font=None, bank=None, prog=None, parent=None):
-        if InstTree is None:
-            fetch_instrument_tree()
-        PathItem.__init__(self, font, bank, prog)
+        PathItem.__init__(self, name, font, bank, prog)
         urwid.ParentNode.__init__(self, name, key=self.path, parent=parent)
-        self.kids = list()
 
     def load_child_keys(self):
         return tuple( k for k,v in InstTree.items() if str(v.get_parent()) == str(self) )
@@ -89,22 +96,20 @@ class PCFApp:
     palette = [ ('body', 'light gray', 'default'),
                 ('head', 'yellow', 'dark blue'),
                 ('foot', 'white', 'dark blue'),
+                ('focus', 'white', 'default'),
 
-                ('dirmark', 'black', 'dark cyan', 'bold'),
-                ('focus', 'light gray', 'dark blue', 'standout'),
-                ('flagged', 'black', 'dark green', ('bold','underline')),
-                ('focus', 'light gray', 'dark blue', 'standout'),
-                ('flagged focus', 'yellow', 'dark cyan',
-                    ('bold','standout','underline')),
-                ('key', 'light cyan', 'black','underline'),
-                ('title', 'white', 'black', 'bold'),
-                ('error', 'dark red', 'light gray'),
+                ('inst', 'light gray', 'default'),
+                ('bank', 'light gray', 'default'),
+                ('font', 'light gray', 'default'),
             ]
 
     def __init__(self):
+        fetch_current_state()
+        current_node = InstTree[ PathItem(*ChanList[0][2:]).path ]
+
         self.header = urwid.Text('header')
         self.footer = urwid.Text('footer')
-        self.listbox = urwid.TreeListBox(urwid.TreeWalker(FluidNode()))
+        self.listbox = urwid.TreeListBox(urwid.TreeWalker(current_node))
         self.view = urwid.Frame(
             urwid.AttrWrap(self.listbox, 'body'),
             header=urwid.AttrWrap(self.header, 'head'),
