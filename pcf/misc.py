@@ -8,23 +8,21 @@ import re
 class RangySet(set):
     def as_ranges(self, wrap=int):
         r = list()
-        l = sorted(self)
-        if not l:
+        if not self:
             return r
 
-        def wp():
-            return wrap(l.pop(0))
+        l = sorted( wrap(x) for x in self )
 
-        b = e = wp()
+        b = e = l.pop(0)
         while l:
             if e+1 == l[0]:
-                e = wp()
+                e = l.pop(0)
             elif e == b:
                 r.append( (b,) )
-                b = e = wp()
+                b = e = l.pop(0)
             else:
                 r.append( (b,e) )
-                b = e = wp()
+                b = e = l.pop(0)
         if None not in (b,e):
             if b == e:
                 r.append( (b,) )
