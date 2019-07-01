@@ -57,11 +57,12 @@ class FluidSynth:
 
     @property
     def channels(self):
-        hm = HandyMatch(r'^\s*chan\s+(?P<chan>\d+),\s*(?P<name>.+?)\s*$')
+        hm = HandyMatch(r'^chan\s+(?P<chan>\d+),\s+sfont\s+(?P<font>\d+),'
+            '\s+bank\s+(?P<bank>\d+),\s+preset\s+(?P<prog>\d+),\s+(?P<name>.+?)$')
         ret = list()
-        for cl in self.send('channels').splitlines():
+        for cl in self.send('channels -verbose').splitlines():
             if hm(cl):
-                ret.append(hm.as_ntuple())
+                ret.append(hm.as_ntuple('chan', 'name', 'font', 'bank','prog'))
         return ret
 
     def select(self, font=None, bank=None, prog=None, chan=0):
