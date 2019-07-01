@@ -3,7 +3,7 @@
 
 import urwid
 from pcf.fluidsynth import FluidSynth
-from pcf.misc import PathItem
+from pcf.misc import PathItem, RangySet
 
 FluidSynthObj = None
 def get_fso():
@@ -32,6 +32,12 @@ def fetch_current_state():
         n = FluidNode(name, font,bank,prog, parent=InstTree[bp])
         InstTree[n.path] = n
 
+    for item in InstTree.values():
+        item.chan = RangySet()
+
+    for item in ChanList:
+        InstTree[ f'/{item.font}/{item.bank}/{item.prog}' ].chan.add(item.chan)
+
 class FluidWidget(urwid.TreeWidget):
     def __init__(self, node):
         super().__init__(node)
@@ -41,13 +47,17 @@ class FluidWidget(urwid.TreeWidget):
 
     def get_display_text(self):
         n = self.get_node()
+        txt = n.name
+        if n.chan:
+            ar = ', '.join([ '-'.join([ str(x) for x in i ]) for i in n.chan.as_ranges() ])
+            txt += f' [{ar}]'
         if n.prog is not None:
-            return ('inst', n.name)
+            return ('inst', txt)
         if n.bank is not None:
-            return ('bank', n.name)
+            return ('bank', txt)
         if n.font is not None:
-            return ('font', n.name)
-        return ('body', n.name)
+            return ('font', txt)
+        return ('body', txt)
 
     def selectable(self):
         return True
