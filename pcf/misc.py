@@ -41,10 +41,14 @@ class HandyMatch:
         if self.g and 0 < i < len(self.g):
             return self.g[i]
 
-    def as_ntuple(self, **kw):
+    def as_ntuple(self, *a, **kw):
         x = self.gd.copy()
         x.update(**kw)
-        return namedtuple('HMR', sorted(x))(**x)
+        if not a:
+            a = sorted(x)
+        elif isinstance(a, str):
+            a = str.split()
+        return namedtuple('HMR', a)(**x)
 
     def __call__(self, line):
         if isinstance(line, (bytes,bytearray)):
