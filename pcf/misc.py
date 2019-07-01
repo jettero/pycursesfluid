@@ -23,7 +23,7 @@ class PathItem:
         return '/' + '/'.join(str(x) for x in self)
 
     def __repr__(self):
-        return f'PathItem[{str(self)}]'
+        return f'{self.__class__.__name__}[{str(self)}]'
 
     @property
     def path(self):
