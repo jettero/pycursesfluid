@@ -49,8 +49,6 @@ class HandyMatch:
         x.update(**kw)
         if not a:
             a = sorted(x)
-        elif isinstance(a, str):
-            a = str.split()
         return namedtuple('HMR', a)(**x)
 
     def __call__(self, line):
