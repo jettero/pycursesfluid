@@ -151,7 +151,11 @@ class PCFApp:
 
     def main(self):
         self.loop = urwid.MainLoop(self.view, self.palette, unhandled_input=self.unhandled_input)
-        self.loop.run()
+        try:
+            self.loop.run()
+        except KeyboardInterrupt:
+            pass
+        print('\nbye.\n')
 
     def unhandled_input(self, k):
         if k in ('q', 'Q'):
