@@ -66,8 +66,7 @@ class PCFApp:
     actual_show_cursor = urwid.escape.SHOW_CURSOR
 
     def __init__(self):
-        self.reload() # populates self.walker
-        # iff self.listbox is populated, reload sets self.listbox.body = self.walker
+        self.reload()
 
         self.listbox = urwid.TreeListBox(self.walker)
         self.header  = urwid.Text('')
@@ -80,6 +79,11 @@ class PCFApp:
     def reload(self):
         self.fetch_current_state()
         self.build_inst_tree()
+
+        self.start_node = self.inst_tree[ PathItem(*self.chan_list[0][2:]).path ]
+        self.walker = urwid.TreeWalker(self.start_node)
+        if self.listbox is not None:
+            self.listbox.body = self.walker
 
     def my_show_cursor(self):
         self.loop.screen.write(self.actual_show_cursor)
@@ -143,8 +147,3 @@ class PCFApp:
         # mark all instruments with their channel(s) (if any)
         for chan,_,*fbp in self.chan_list:
             self.inst_tree[ PathItem(*fbp).path ].chan.add(chan)
-
-        self.start_node = self.inst_tree[ PathItem(*self.chan_list[0][2:]).path ]
-        self.walker = urwid.TreeWalker(self.start_node)
-        if self.listbox is not None:
-            self.listblox.body = self.walker
