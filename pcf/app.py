@@ -214,18 +214,11 @@ class PCFApp:
             n = FluidNode(path, font, parent=top)
             self.inst_tree[n.path] = n
 
-        # add instrument bank nodes
-        for name,font,bank,_ in self.inst_list:
-            fp = PathItem(font).path
-            bp = PathItem(font,bank).path
-            if bp in self.inst_tree:
-                continue
-            self.inst_tree[bp] = FluidNode(f'Bank-{bank}', font,bank, parent=self.inst_tree[fp])
-
         # add instrument nodes
         for name,font,bank,prog in self.inst_list:
-            bp = PathItem(font,bank).path
-            n = FluidNode(name, font,bank,prog, parent=self.inst_tree[bp])
+            fp = PathItem(font).path
+            n = FluidNode(f'{int(bank):03d}-{int(prog):03d} {name}',
+                font,bank,prog, parent=self.inst_tree[fp])
             self.inst_tree[n.path] = n
 
         # mark all instruments with their channel(s) (if any)
