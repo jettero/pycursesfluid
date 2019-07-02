@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import logging
 import urwid
 from pcf.fluidsynth import FluidSynth
 from pcf.misc import PathItem, RangySet
+
+log = logging.getLogger(__name__)
 
 FluidSynthObj = None
 def get_fso():
@@ -14,10 +17,19 @@ def get_fso():
 
 ChanList = InstTree = None
 def fetch_current_state():
+    log.debug('fetch_current_state()')
+
     global InstTree, ChanList
     fso = get_fso()
 
     ChanList = fso.channels
+
+    if InstTree is not None:
+        for n in InstTree.values():
+            log.debug(f'marking {n} invalid and complaining "modified"')
+            w = n.get_widget()
+            w._invalidate()
+            urwid.emit_signal(w, 'modified')
 
     InstTree = dict()
     InstTree['/'] = top = FluidNode('FluidSynth')
@@ -59,9 +71,6 @@ class FluidWidget(urwid.TreeWidget):
             return ('font', txt)
         return ('body', txt)
 
-    def selectable(self):
-        return True
-
     def keypress(self, size, key):
         key = super().keypress(size, key)
         if key:
@@ -69,14 +78,27 @@ class FluidWidget(urwid.TreeWidget):
         return key
 
     def unhandled_keys(self, size, key):
-        if key == " ":
-            self.flagged = not self.flagged
-            self.update_w()
+        if key in ' 1234567890':
+            n = self.get_node()
+            log.debug(f'{n.name}/{n} received key="{key}"')
+            if None not in (n.font, n.bank, n.prog):
+                if key != ' ':
+                    chan = int(key)
+                else:
+                    chan = 0
+                log.debug(f'sending select({n.font}, {n.bank}, {n.prog}, chan={n.chan})')
+                get_fso().select(n.font, n.bank, n.prog, chan=chan)
+                fetch_current_state()
+                self.update_w()
         else:
             return key
 
+
+    def selectable(self):
+        return True
+
     def update_w(self):
-        if self.flagged:
+        if self.get_node().chan:
             self._w.attr = 'flagged'
             self._w.focus_attr = 'flagged focus'
         else:
@@ -119,9 +141,11 @@ class PCFApp:
 
         self.header = urwid.Text('header')
         self.footer = urwid.Text('footer')
-        self.listbox = urwid.TreeListBox(urwid.TreeWalker(current_node))
+        self.walker = urwid.TreeWalker(current_node)
+        self.lstbox = urwid.TreeListBox(self.walker)
+
         self.view = urwid.Frame(
-            urwid.AttrWrap(self.listbox, 'body'),
+            urwid.AttrWrap(self.lstbox, 'body'),
             header=urwid.AttrWrap(self.header, 'head'),
             footer=urwid.AttrWrap(self.footer, 'foot'))
 
