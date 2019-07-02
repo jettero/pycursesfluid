@@ -70,18 +70,18 @@ class PCFApp:
             ]
 
     _fso = font_list = chan_list = inst_list = None # class vars
-    inst_tree = None # instance var
+    listbox = walker = inst_tree = None # instance var
 
     def __init__(self):
-        self.reload()
+        self.reload() # populates self.walker
+        # iff self.listbox is populated, reload sets self.listbox.body = self.walker
 
         self.header = urwid.Text('header')
         self.footer = urwid.Text('footer')
-        self.walker = urwid.TreeWalker(self.start_node)
-        self.lstbox = urwid.TreeListBox(self.walker)
+        self.listbox = urwid.TreeListBox(self.walker)
 
         self.view = urwid.Frame(
-            urwid.AttrWrap(self.lstbox, 'body'),
+            urwid.AttrWrap(self.listbox, 'body'),
             header=urwid.AttrWrap(self.header, 'head'),
             footer=urwid.AttrWrap(self.footer, 'foot'))
 
@@ -147,3 +147,6 @@ class PCFApp:
             self.inst_tree[ PathItem(*fbp).path ].chan.add(chan)
 
         self.start_node = self.inst_tree[ PathItem(*self.chan_list[0][2:]).path ]
+        self.walker = urwid.TreeWalker(self.start_node)
+        if self.listbox is not None:
+            self.listblox.body = self.walker
