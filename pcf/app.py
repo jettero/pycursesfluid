@@ -51,6 +51,7 @@ class FluidNode(urwid.ParentNode, PathItem):
         return FluidWidget(self)
 
 
+ACTUAL_SHOW_CURSOR = urwid.escape.SHOW_CURSOR
 class PCFApp:
     log = logging.getLogger('PCFApp')
     palette = [ ('body', 'light gray', 'default'),
@@ -59,13 +60,16 @@ class PCFApp:
                 ('flagged', 'dark green', 'default'),
                 ('focus', 'white', 'dark gray'),
                 ('flagged focus', 'light green', 'dark gray'),
+                ('active', 'white', 'dark blue'),
+                ('inactive', 'dark gray', 'dark blue'),
             ]
 
     _fso = font_list = chan_list = inst_list = None # class vars
-    start_node = listbox = walker = inst_tree = None # instance var
-    actual_show_cursor = urwid.escape.SHOW_CURSOR
 
     def __init__(self):
+        self.start_node = self.listbox = self.walker = self.inst_tree = None
+        self.active_channels = {0,}
+        self.mouse_bookmarks = list()
         self.reload()
 
         self.listbox = urwid.TreeListBox(self.walker)
@@ -77,6 +81,8 @@ class PCFApp:
         fa = urwid.AttrWrap(self.footer,  'foot')
 
         self.view = urwid.Frame( la, header=ha, footer=fa )
+
+        self.update_footer()
 
     def reload(self):
         self.fetch_current_state()
@@ -94,9 +100,6 @@ class PCFApp:
         if self.listbox is not None:
             self.listbox.body = self.walker
 
-    def my_show_cursor(self):
-        self.loop.screen.write(self.actual_show_cursor)
-
     def main(self):
         urwid.escape.SHOW_CURSOR = ''
         self.loop = urwid.MainLoop(self.view, self.palette, unhandled_input=self.unhandled_input)
@@ -105,7 +108,8 @@ class PCFApp:
         except KeyboardInterrupt:
             pass
         finally:
-            self.my_show_cursor()
+            urwid.escape.SHOW_CURSOR = ACTUAL_SHOW_CURSOR
+            self.loop.screen.write(urwid.escape.SHOW_CURSOR)
             print('\nbye.\n')
 
     @property
@@ -122,18 +126,49 @@ class PCFApp:
         except TypeError:
             pass
 
-    def unhandled_input(self, k):
-        if k in ('q', 'Q'):
-            raise urwid.ExitMainLoop()
-        if k in (' 0123456789'):
-            try: chan = int(k)
-            except: chan = 0
-            cur_node = self.current_node
-            self.footer.set_text(f'setting chan={chan} → {cur_node.full_string} … ')
+    def update_footer(self, *msg, draw_now=None):
+        attr_txt = list()
+        for i in range(16):
+            c = 'active' if i in self.active_channels else 'inactive'
+            attr_txt.append( (c,f'{i:x}') )
+        for m in msg:
+            attr_txt += [ '  ', ('foot', m) ]
+        self.footer.set_text( attr_txt )
+        if msg and draw_now is None:
+            draw_now = True
+        if draw_now:
             self.loop.draw_screen()
-            self.fso.select( cur_node.font, cur_node.bank, cur_node.prog, chan=chan )
-            self.reload()
-            self.footer.set_text('')
+
+    def unhandled_input(self, k):
+        self.log.debug('unhandled_input(%s)', k)
+        if isinstance(k, tuple):
+            ev,button,col,row = k
+        else:
+            if k in ('q', 'Q'):
+                raise urwid.ExitMainLoop()
+
+            elif k == '=':
+                self.active_channels = set(range(16))
+                self.update_footer()
+            elif k == '_':
+                self.active_channels.clear()
+                self.update_footer()
+
+            elif k in '0123456789abcdef':
+                k = int(k, 16)
+                if k in self.active_channels:
+                    self.active_channels.remove(k)
+                else:
+                    self.active_channels.add(k)
+                self.update_footer()
+
+            elif k == ' ':
+                cur_node = self.current_node
+                for chan in self.active_channels:
+                    self.fso.select( cur_node.font, cur_node.bank, cur_node.prog, chan=chan )
+                self.update_footer(f'setting active_channels to {cur_node.full_string} … ')
+                self.reload()
+                self.update_footer()
 
     @property
     def fso(self):
