@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import logging
 import socket
 import select
 
@@ -8,6 +9,7 @@ from .misc import HandyMatch
 
 class FluidSynth:
     _socket = None
+    log = logging.getLogger('FluidSynth')
 
     def __init__(self, port=9800, host='localhost'):
         self.port = port
@@ -36,8 +38,9 @@ class FluidSynth:
         return buf
 
     def send(self, cmd, chunk_size=1024, end='\n'):
-        cmd = cmd.rstrip() + '\n'
-        cmd = cmd.encode()
+        cmd = cmd.rstrip()
+        self.log.debug('send(%s)', cmd)
+        cmd = (cmd + '\n').encode()
         self.shell_socket.send(cmd)
         return self.read(chunk_size=chunk_size)
 
