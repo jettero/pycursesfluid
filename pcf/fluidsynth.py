@@ -23,7 +23,7 @@ class FluidSynth:
         return self._socket
 
     @property
-    def can_read(self, timeout=0.2):
+    def can_read(self, timeout=0.1):
         rl,_,_ = select.select([self.shell_socket], [], [], timeout)
         return bool(rl)
 
