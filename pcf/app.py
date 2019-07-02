@@ -21,13 +21,7 @@ class FluidWidget(urwid.TreeWidget):
         if n.chan:
             ar = ', '.join([ '-'.join([ str(x) for x in i ]) for i in n.chan.as_ranges() ])
             txt += f' [{ar}]'
-        if n.prog is not None:
-            return ('inst', txt)
-        if n.bank is not None:
-            return ('bank', txt)
-        if n.font is not None:
-            return ('font', txt)
-        return ('body', txt)
+        return txt
 
     def update_w(self):
         if self.get_node().chan:
@@ -60,13 +54,11 @@ class FluidNode(urwid.ParentNode, PathItem):
 class PCFApp:
     log = logging.getLogger('PCFApp')
     palette = [ ('body', 'light gray', 'default'),
-                ('head', 'yellow', 'dark blue'),
-                ('foot', 'white', 'dark blue'),
+                ('head', 'light gray', 'dark blue'),
+                ('foot', 'light gray', 'dark blue'),
                 ('focus', 'white', 'default'),
-
-                ('inst', 'light gray', 'default'),
-                ('bank', 'light gray', 'default'),
-                ('font', 'light gray', 'default'),
+                ('flagged', 'dark green', 'default'),
+                ('flagged focus', 'light green', 'default'),
             ]
 
     _fso = font_list = chan_list = inst_list = None # class vars
