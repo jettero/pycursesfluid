@@ -31,7 +31,7 @@ class RangySet(set):
         return r
 
 class PathItem:
-    attrlist = ('a', 'b', 'c') # just an example, overload this
+    attrlist = tuple( f'my_{i}' for i in 'abcdxyzwijklmn' )
 
     def __init__(self, *args):
         for i,j in zip_longest(self.attrlist, args[:len(self.attrlist)]):
