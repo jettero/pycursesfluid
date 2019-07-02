@@ -62,25 +62,34 @@ class PCFApp:
             ]
 
     _fso = font_list = chan_list = inst_list = None # class vars
-    listbox = walker = inst_tree = None # instance var
+    start_node = listbox = walker = inst_tree = None # instance var
     actual_show_cursor = urwid.escape.SHOW_CURSOR
 
     def __init__(self):
         self.reload()
 
         self.listbox = urwid.TreeListBox(self.walker)
-        self.header  = urwid.Text('')
+        self.header  = urwid.Text('FluidSynth Instruments')
+        self.footer  = urwid.Text('')
 
         la = urwid.AttrWrap(self.listbox, 'body')
         ha = urwid.AttrWrap(self.header,  'head')
+        fa = urwid.AttrWrap(self.footer,  'foot')
 
-        self.view = urwid.Frame( la, header=ha )
+        self.view = urwid.Frame( la, header=ha, footer=fa )
 
     def reload(self):
         self.fetch_current_state()
         self.build_inst_tree()
 
-        self.start_node = self.inst_tree[ PathItem(*self.chan_list[0][2:]).path ]
+        cur_node = self.current_node
+        if cur_node:
+            start_key = cur_node.path
+        else:
+            start_key = PathItem(*self.chan_list[0][2:]).path
+
+        self.start_node = self.inst_tree[ start_key ]
+
         self.walker = urwid.TreeWalker(self.start_node)
         if self.listbox is not None:
             self.listbox.body = self.walker
@@ -99,14 +108,32 @@ class PCFApp:
             self.my_show_cursor()
             print('\nbye.\n')
 
+    @property
+    def current(self):
+        try:
+            return self.listbox.body.get_focus()
+        except AttributeError:
+            pass
+
+    @property
+    def current_node(self):
+        try:
+            return self.current[1]
+        except TypeError:
+            pass
+
     def unhandled_input(self, k):
         if k in ('q', 'Q'):
             raise urwid.ExitMainLoop()
-        cur_widget, cur_node = self.listbox.body.get_focus()
         if k in (' 0123456789'):
             try: chan = int(k)
             except: chan = 0
+            cur_node = self.current_node
+            self.footer.set_text(f'setting chan={chan} → {cur_node.full_string} … ')
+            self.loop.draw_screen()
             self.fso.select( cur_node.font, cur_node.bank, cur_node.prog, chan=chan )
+            self.reload()
+            self.footer.set_text('')
 
     @property
     def fso(self):

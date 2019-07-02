@@ -48,6 +48,18 @@ class PathItem:
                 break
             yield v
 
+    @property
+    def full_string(self):
+        r = list()
+        for an in self.attrlist:
+            if an.startswith('!'):
+                an = an[1:]
+            v = getattr(self, an)
+            if v is None:
+                break
+            r.append(str(v))
+        return '/' + '/'.join(r)
+
     def __str__(self):
         return '/' + '/'.join(str(x) for x in self)
 
