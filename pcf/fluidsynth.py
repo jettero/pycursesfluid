@@ -27,7 +27,7 @@ class FluidSynth:
         rl,_,_ = select.select([self.shell_socket], [], [], timeout)
         return bool(rl)
 
-    def read(self, chunk_size=1024):
+    def read(self, chunk_size=1024*8):
         sock = self.shell_socket
         buf = ''
         while self.can_read:
