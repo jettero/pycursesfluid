@@ -6,51 +6,9 @@ import urwid
 from pcf.fluidsynth import FluidSynth
 from pcf.misc import PathItem, RangySet
 
-log = logging.getLogger(__name__)
-
-FluidSynthObj = None
-def get_fso():
-    global FluidSynthObj
-    if FluidSynthObj is None:
-        FluidSynthObj = FluidSynth()
-    return FluidSynthObj
-
-ChanList = InstTree = None
-def fetch_current_state():
-    log.debug('fetch_current_state()')
-
-    global InstTree, ChanList
-    fso = get_fso()
-
-    ChanList = fso.channels
-
-    if InstTree is not None:
-        for n in InstTree.values():
-            log.debug(f'marking {n} invalid and complaining "modified"')
-            w = n.get_widget()
-            w._invalidate()
-            urwid.emit_signal(w, 'modified')
-
-    InstTree = dict()
-    InstTree['/'] = top = FluidNode('FluidSynth')
-    for font,name,path in fso.fonts:
-        n = FluidNode(path, font, parent=top)
-        InstTree[n.path] = n
-    for name,font,bank,prog in fso.instruments:
-        fp = f'/{font}'
-        bp = fp + f'/{bank}'
-        if bp not in InstTree:
-            InstTree[bp] = FluidNode(f'Bank-{bank}', font,bank, parent=InstTree[fp])
-        n = FluidNode(name, font,bank,prog, parent=InstTree[bp])
-        InstTree[n.path] = n
-
-    for item in InstTree.values():
-        item.chan = RangySet()
-
-    for item in ChanList:
-        InstTree[ f'/{item.font}/{item.bank}/{item.prog}' ].chan.add(item.chan)
-
 class FluidWidget(urwid.TreeWidget):
+    log = logging.getLogger('FluidWidget')
+
     def __init__(self, node):
         super().__init__(node)
         self._w = urwid.AttrWrap(self._w, None)
@@ -71,32 +29,6 @@ class FluidWidget(urwid.TreeWidget):
             return ('font', txt)
         return ('body', txt)
 
-    def keypress(self, size, key):
-        key = super().keypress(size, key)
-        if key:
-            key = self.unhandled_keys(size, key)
-        return key
-
-    def unhandled_keys(self, size, key):
-        if key in ' 1234567890':
-            n = self.get_node()
-            log.debug(f'{n.name}/{n} received key="{key}"')
-            if None not in (n.font, n.bank, n.prog):
-                if key != ' ':
-                    chan = int(key)
-                else:
-                    chan = 0
-                log.debug(f'sending select({n.font}, {n.bank}, {n.prog}, chan={n.chan})')
-                get_fso().select(n.font, n.bank, n.prog, chan=chan)
-                fetch_current_state()
-                self.update_w()
-        else:
-            return key
-
-
-    def selectable(self):
-        return True
-
     def update_w(self):
         if self.get_node().chan:
             self._w.attr = 'flagged'
@@ -105,26 +37,28 @@ class FluidWidget(urwid.TreeWidget):
             self._w.attr = 'body'
             self._w.focus_attr = 'focus'
 
+
 class FluidNode(urwid.ParentNode, PathItem):
+    log = logging.getLogger('FluidNode')
     attrlist = ('!name', 'font', 'bank', 'prog')
 
     def __init__(self, name='FluidSynth', font=None, bank=None, prog=None, parent=None):
         PathItem.__init__(self, name, font, bank, prog)
         urwid.ParentNode.__init__(self, name, key=self.path, parent=parent)
+        self.chan = RangySet()
 
-    def load_child_keys(self):
-        return tuple( k for k,v in InstTree.items() if str(v.get_parent()) == str(self) )
+        if parent is not None:
+            parent.set_child_node(self.path, self)
 
-    def load_child_node(self, key):
-        return InstTree[key]
+    def get_child_keys(self):
+        return tuple(self._children.keys())
 
     def load_widget(self):
         return FluidWidget(self)
 
-    def get_key(self):
-        return self.path
 
 class PCFApp:
+    log = logging.getLogger('PCFApp')
     palette = [ ('body', 'light gray', 'default'),
                 ('head', 'yellow', 'dark blue'),
                 ('foot', 'white', 'dark blue'),
@@ -135,19 +69,26 @@ class PCFApp:
                 ('font', 'light gray', 'default'),
             ]
 
+    _fso = font_list = chan_list = inst_list = None # class vars
+    inst_tree = None # instance var
+
     def __init__(self):
-        fetch_current_state()
-        current_node = InstTree[ PathItem(*ChanList[0][2:]).path ]
+        self.reload()
+        start_node = self.inst_tree[ PathItem(*self.chan_list[0][2:]).path ]
 
         self.header = urwid.Text('header')
         self.footer = urwid.Text('footer')
-        self.walker = urwid.TreeWalker(current_node)
+        self.walker = urwid.TreeWalker(start_node)
         self.lstbox = urwid.TreeListBox(self.walker)
 
         self.view = urwid.Frame(
             urwid.AttrWrap(self.lstbox, 'body'),
             header=urwid.AttrWrap(self.header, 'head'),
             footer=urwid.AttrWrap(self.footer, 'foot'))
+
+    def reload(self):
+        self.fetch_current_state()
+        self.build_inst_tree()
 
     def main(self):
         self.loop = urwid.MainLoop(self.view, self.palette, unhandled_input=self.unhandled_input)
@@ -160,3 +101,48 @@ class PCFApp:
     def unhandled_input(self, k):
         if k in ('q', 'Q'):
             raise urwid.ExitMainLoop()
+
+    @property
+    def fso(self):
+        return self.get_fso()
+
+    @classmethod
+    def get_fso(cls):
+        if cls._fso is None:
+            cls._fso = FluidSynth()
+        return cls._fso
+
+    def fetch_current_state(cls):
+        cls.log.debug('fetch_current_state()')
+        fso = cls.get_fso()
+        cls.font_list = fso.fonts
+        cls.chan_list = fso.channels
+        cls.inst_list = fso.instruments
+
+    def build_inst_tree(self):
+        # reset tree
+        self.inst_tree = dict()
+        self.inst_tree['/'] = top = FluidNode('FluidSynth')
+
+        # add soundfont nodes
+        for font,name,path in self.font_list:
+            n = FluidNode(path, font, parent=top)
+            self.inst_tree[n.path] = n
+
+        # add instrument bank nodes
+        for name,font,bank,_ in self.inst_list:
+            fp = PathItem(font).path
+            bp = PathItem(font,bank).path
+            if bp in self.inst_tree:
+                continue
+            self.inst_tree[bp] = FluidNode(f'Bank-{bank}', font,bank, parent=self.inst_tree[fp])
+
+        # add instrument nodes
+        for name,font,bank,prog in self.inst_list:
+            bp = PathItem(font,bank).path
+            n = FluidNode(name, font,bank,prog, parent=self.inst_tree[bp])
+            self.inst_tree[n.path] = n
+
+        # mark all instruments with their channel(s) (if any)
+        for chan,_,*fbp in self.chan_list:
+            self.inst_tree[ PathItem(*fbp).path ].chan.add(chan)
