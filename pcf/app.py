@@ -102,6 +102,11 @@ class PCFApp:
     def unhandled_input(self, k):
         if k in ('q', 'Q'):
             raise urwid.ExitMainLoop()
+        cur_widget, cur_node = self.listbox.body.get_focus()
+        if k in (' 0123456789'):
+            try: chan = int(k)
+            except: chan = 0
+            self.fso.select( cur_node.font, cur_node.bank, cur_node.prog, chan=chan )
 
     @property
     def fso(self):
