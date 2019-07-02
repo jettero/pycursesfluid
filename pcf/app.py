@@ -74,11 +74,10 @@ class PCFApp:
 
     def __init__(self):
         self.reload()
-        start_node = self.inst_tree[ PathItem(*self.chan_list[0][2:]).path ]
 
         self.header = urwid.Text('header')
         self.footer = urwid.Text('footer')
-        self.walker = urwid.TreeWalker(start_node)
+        self.walker = urwid.TreeWalker(self.start_node)
         self.lstbox = urwid.TreeListBox(self.walker)
 
         self.view = urwid.Frame(
@@ -146,3 +145,5 @@ class PCFApp:
         # mark all instruments with their channel(s) (if any)
         for chan,_,*fbp in self.chan_list:
             self.inst_tree[ PathItem(*fbp).path ].chan.add(chan)
+
+        self.start_node = self.inst_tree[ PathItem(*self.chan_list[0][2:]).path ]
