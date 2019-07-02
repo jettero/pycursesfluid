@@ -36,4 +36,10 @@ setup(name='pycursesfluid',
     install_requires = mods,
     cmdclass         = {'test': PyTest},
     packages         = find_packages(),
+
+    entry_points = {
+        'console_scripts': [
+            'pcf = pcf.cmd:run',
+        ],
+    },
 )
