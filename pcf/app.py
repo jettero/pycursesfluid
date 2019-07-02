@@ -56,13 +56,14 @@ class PCFApp:
     palette = [ ('body', 'light gray', 'default'),
                 ('head', 'light gray', 'dark blue'),
                 ('foot', 'light gray', 'dark blue'),
-                ('focus', 'white', 'default'),
                 ('flagged', 'dark green', 'default'),
-                ('flagged focus', 'light green', 'default'),
+                ('focus', 'white', 'dark gray'),
+                ('flagged focus', 'light green', 'dark gray'),
             ]
 
     _fso = font_list = chan_list = inst_list = None # class vars
     listbox = walker = inst_tree = None # instance var
+    actual_show_cursor = urwid.escape.SHOW_CURSOR
 
     def __init__(self):
         self.reload() # populates self.walker
@@ -80,13 +81,19 @@ class PCFApp:
         self.fetch_current_state()
         self.build_inst_tree()
 
+    def my_show_cursor(self):
+        self.loop.screen.write(self.actual_show_cursor)
+
     def main(self):
+        urwid.escape.SHOW_CURSOR = ''
         self.loop = urwid.MainLoop(self.view, self.palette, unhandled_input=self.unhandled_input)
         try:
             self.loop.run()
         except KeyboardInterrupt:
             pass
-        print('\nbye.\n')
+        finally:
+            self.my_show_cursor()
+            print('\nbye.\n')
 
     def unhandled_input(self, k):
         if k in ('q', 'Q'):
