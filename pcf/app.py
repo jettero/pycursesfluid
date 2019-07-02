@@ -76,14 +76,13 @@ class PCFApp:
         self.reload() # populates self.walker
         # iff self.listbox is populated, reload sets self.listbox.body = self.walker
 
-        self.header = urwid.Text('header')
-        self.footer = urwid.Text('footer')
         self.listbox = urwid.TreeListBox(self.walker)
+        self.header  = urwid.Text('')
 
-        self.view = urwid.Frame(
-            urwid.AttrWrap(self.listbox, 'body'),
-            header=urwid.AttrWrap(self.header, 'head'),
-            footer=urwid.AttrWrap(self.footer, 'foot'))
+        la = urwid.AttrWrap(self.listbox, 'body')
+        ha = urwid.AttrWrap(self.header,  'head')
+
+        self.view = urwid.Frame( la, header=ha )
 
     def reload(self):
         self.fetch_current_state()
