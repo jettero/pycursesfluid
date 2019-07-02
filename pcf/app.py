@@ -69,7 +69,7 @@ class PCFApp:
     def __init__(self):
         self.start_node = self.listbox = self.walker = self.inst_tree = None
         self.active_channels = {0,}
-        self.mouse_bookmarks = list()
+        self.mouse_bookmarks = set()
         self.reload()
 
         self.listbox = urwid.TreeListBox(self.walker)
@@ -139,13 +139,35 @@ class PCFApp:
         if draw_now:
             self.loop.draw_screen()
 
+    def push_current_node_to_active_channels(self):
+        cur_node = self.current_node
+        self.update_footer(f'→ setting active channels → {cur_node.full_string} … ')
+        for chan in self.active_channels:
+            if chan in cur_node.chan:
+                continue
+            self.fso.select( cur_node.font, cur_node.bank, cur_node.prog, chan=chan )
+        self.reload()
+        self.update_footer()
+
     def unhandled_input(self, k):
         self.log.debug('unhandled_input(%s)', k)
         if isinstance(k, tuple):
             ev,button,col,row = k
+            if ev == 'mouse press' and button == 1:
+                self.mouse_bookmarks.add('+')
+            elif ev == 'mouse release' and '+' in self.mouse_bookmarks:
+                self.mouse_bookmarks.remove('+')
+                self.active_channels = set(int(x) for x in self.current_node.chan)
+                self.update_footer()
+
         else:
             if k in ('q', 'Q'):
                 raise urwid.ExitMainLoop()
+
+            elif k == 'r':
+                self.update_footer(f'reloading …')
+                self.reload()
+                self.update_footer()
 
             elif k == '=':
                 self.active_channels = set(range(16))
@@ -163,12 +185,7 @@ class PCFApp:
                 self.update_footer()
 
             elif k == ' ':
-                cur_node = self.current_node
-                for chan in self.active_channels:
-                    self.fso.select( cur_node.font, cur_node.bank, cur_node.prog, chan=chan )
-                self.update_footer(f'setting active_channels to {cur_node.full_string} … ')
-                self.reload()
-                self.update_footer()
+                self.push_current_node_to_active_channels()
 
     @property
     def fso(self):
