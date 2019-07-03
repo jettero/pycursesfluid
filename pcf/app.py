@@ -21,7 +21,15 @@ class FluidWidget(urwid.TreeWidget):
         if n.chan:
             ar = ', '.join([ '-'.join([ str(x) for x in i ]) for i in n.chan.as_ranges() ])
             txt += f' [{ar}]'
+        self.log.debug("get_display_text() → %s", txt)
         return txt
+
+    def update(self):
+        iw = self.get_inner_widget()
+        iw.set_text( self.get_display_text() )
+        iw._invalidate()
+        self._invalidate()
+        self.update_w()
 
     def update_w(self):
         if self.get_node().chan:
@@ -30,7 +38,6 @@ class FluidWidget(urwid.TreeWidget):
         else:
             self._w.attr = 'body'
             self._w.focus_attr = 'focus'
-
 
 class FluidNode(urwid.ParentNode, PathItem):
     log = logging.getLogger('FluidNode')
@@ -50,6 +57,11 @@ class FluidNode(urwid.ParentNode, PathItem):
     def load_widget(self):
         return FluidWidget(self)
 
+    def _invalidate(self):
+        self.get_widget().update()
+        # w = self.get_widget()
+        # w._invalidate()
+        # w.get_inner_widget()
 
 ACTUAL_SHOW_CURSOR = urwid.escape.SHOW_CURSOR
 class PCFApp:
@@ -84,8 +96,9 @@ class PCFApp:
 
         self.update_footer()
 
-    def reload(self):
-        self.fetch_current_state()
+    def reload(self, fetch=True):
+        if fetch:
+            self.fetch_current_state()
         self.build_inst_tree()
 
         cur_node = self.current_node
@@ -146,19 +159,26 @@ class PCFApp:
             if chan in cur_node.chan:
                 continue
             self.fso.select( cur_node.font, cur_node.bank, cur_node.prog, chan=chan )
-        self.reload()
+            cur_node.chan.add(chan)
+            self.log.debug('added chan=%s to %s', chan, cur_node)
+            cur_node._invalidate()
+            for itn in self.inst_tree.values():
+                if itn is not cur_node and chan in itn.chan:
+                    self.log.debug("chan=%s went to %s, removed from %s", chan, cur_node, itn)
+                    itn.chan.remove(chan)
+                    itn._invalidate()
         self.update_footer()
 
     def unhandled_input(self, k):
         self.log.debug('unhandled_input(%s)', k)
         if isinstance(k, tuple):
             ev,button,col,row = k
-            if ev == 'mouse press' and button == 1:
-                self.mouse_bookmarks.add('+')
-            elif ev == 'mouse release' and '+' in self.mouse_bookmarks:
-                self.mouse_bookmarks.remove('+')
-                self.active_channels = set(int(x) for x in self.current_node.chan)
-                self.update_footer()
+            # if ev == 'mouse press' and button == 1:
+            #     self.mouse_bookmarks.add('+')
+            # elif ev == 'mouse release' and '+' in self.mouse_bookmarks:
+            #     self.mouse_bookmarks.remove('+')
+            #     self.active_channels = set(int(x) for x in self.current_node.chan)
+            #     self.update_footer()
 
         else:
             if k in ('q', 'Q'):
