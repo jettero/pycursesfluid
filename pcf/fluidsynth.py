@@ -4,16 +4,29 @@
 import logging
 import socket
 import select
+import re
 
 from .misc import HandyMatch
+
+# I use -o 'shell.prompt=fs> ' in my fluidsynth so when I 'nc localhost 9800' I
+# can see when I start typing.
+MY_PROMPT = re.compile(r'^[^>]*>\s*')
+LINE_SPLIT = re.compile(r'[\x0d\x0a]+')
+CHUNK_SIZE = 1024*8
+TIMEOUT = 0.1
 
 class FluidSynth:
     _socket = None
     log = logging.getLogger('FluidSynth')
 
-    def __init__(self, port=9800, host='localhost'):
+    def __init__(self, port=9800, host='localhost',
+            chunk_size=CHUNK_SIZE, timeout=TIMEOUT,
+            prompt=MY_PROMPT):
         self.port = port
         self.host = host
+        self.chunk_size = chunk_size
+        self.timeout = timeout
+        self.prompt = prompt
 
     @property
     def shell_socket(self):
@@ -23,26 +36,43 @@ class FluidSynth:
         return self._socket
 
     @property
-    def can_read(self, timeout=0.1):
-        rl,_,_ = select.select([self.shell_socket], [], [], timeout)
+    def can_read(self):
+        rl,_,_ = select.select([self.shell_socket], [], [], self.timeout)
         return bool(rl)
 
-    def read(self, chunk_size=1024*8):
+    def _raw_read(self):
         sock = self.shell_socket
-        buf = ''
         while self.can_read:
-            buf_ = sock.recv(chunk_size)
-            if buf_ is None:
+            buf = sock.recv(self.chunk_size)
+            if buf is None:
                 break
-            buf += buf_.decode()
-        return buf
+            yield buf
 
-    def send(self, cmd, chunk_size=1024, end='\n'):
-        cmd = cmd.rstrip()
-        self.log.debug('send(%s)', cmd)
-        cmd = (cmd + '\n').encode()
-        self.shell_socket.send(cmd)
-        return self.read(chunk_size=chunk_size)
+    def _post_read(self, part):
+        if self.prompt:
+            return self.prompt.sub('', part)
+        return part
+
+    def read(self):
+        buf = ''
+        for chunk in self._raw_read():
+            buf += chunk.decode()
+            while True:
+                bs = LINE_SPLIT.split(buf, 1)
+                if len(bs) == 1:
+                    break
+                buf = bs[1]
+                yield self._post_read(bs[0])
+        if buf:
+            buf = self._post_read(buf.rstrip())
+            if buf:
+                yield buf
+
+    def send(self, *cmds):
+        cmds = [ cmd.rstrip() for cmd in cmds ]
+        self.log.debug('send(%s)', cmds)
+        self.shell_socket.send( (('\n'.join(cmds)) + '\n').encode() )
+        return self.read()
 
     @property
     def fonts(self):
@@ -61,7 +91,7 @@ class FluidSynth:
     @property
     def channels(self):
         hm = HandyMatch(r'^chan\s+(?P<chan>\d+),\s+sfont\s+(?P<font>\d+),'
-            '\s+bank\s+(?P<bank>\d+),\s+preset\s+(?P<prog>\d+),\s+(?P<name>.+?)$')
+            r'\s+bank\s+(?P<bank>\d+),\s+preset\s+(?P<prog>\d+),\s+(?P<name>.+?)$')
         ret = list()
         for cl in self.send('channels -verbose').splitlines():
             if hm(cl):
