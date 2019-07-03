@@ -27,6 +27,8 @@ class FluidWidget(urwid.TreeWidget):
     def update(self):
         iw = self.get_inner_widget()
         iw.set_text( self.get_display_text() )
+        # definitely not convinced all this invalidating and updating is
+        # necessary, but when urwid starts to work, you roll with it.
         iw._invalidate()
         self._invalidate()
         self.update_w()
