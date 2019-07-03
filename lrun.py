@@ -2,6 +2,9 @@
 # coding: utf-8
 
 import logging
+import os, sys
+sys.path.insert(0, os.path.dirname(__file__))
+
 import pcf.cmd
 
 logging.basicConfig( level=logging.DEBUG, filename='debug.log',

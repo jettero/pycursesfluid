@@ -76,10 +76,9 @@ class FluidSynth:
 
     @property
     def fonts(self):
-        _,*fontlines = self.send('fonts').splitlines()
         hm = HandyMatch(r'\s*(?P<id>\d+)\s+(?P<path>\S+)\s*')
         ret = list()
-        for fl in fontlines:
+        for fl in self.send('fonts'):
             if hm(fl):
                 name = hm['path']
                 name = name.split('/')[-1]
@@ -93,7 +92,7 @@ class FluidSynth:
         hm = HandyMatch(r'^chan\s+(?P<chan>\d+),\s+sfont\s+(?P<font>\d+),'
             r'\s+bank\s+(?P<bank>\d+),\s+preset\s+(?P<prog>\d+),\s+(?P<name>.+?)$')
         ret = list()
-        for cl in self.send('channels -verbose').splitlines():
+        for cl in self.send('channels -verbose'):
             if hm(cl):
                 ret.append(hm.as_ntuple('chan', 'name', 'font', 'bank','prog'))
         return ret
@@ -108,7 +107,7 @@ class FluidSynth:
         hm = HandyMatch(r'^\s*0*(?P<bank>\d+)-0*(?P<prog>\d+)\s+(?P<name>.+?)\s*$')
         ret = list()
         for font in self.fonts:
-            for il in self.send(f'inst {font.id}').splitlines():
+            for il in self.send(f'inst {font.id}'):
                 if hm(il):
                     ret.append(hm.as_ntuple('name', 'font', 'bank', 'prog', font=font.id))
         return sorted(ret, key=lambda x: (int(x.font), int(x.bank), int(x.prog)))
