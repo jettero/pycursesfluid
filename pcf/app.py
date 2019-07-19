@@ -6,8 +6,8 @@ import urwid
 from pcf.fluidsynth import FluidSynth
 from pcf.misc import PathItem, RangySet
 
-class FluidWidget(urwid.TreeWidget):
-    log = logging.getLogger('FluidWidget')
+class FluidInstrumentWidget(urwid.TreeWidget):
+    log = logging.getLogger('FluidInstrumentWidget')
 
     def __init__(self, node):
         super().__init__(node)
@@ -41,8 +41,8 @@ class FluidWidget(urwid.TreeWidget):
             self._w.attr = 'body'
             self._w.focus_attr = 'focus'
 
-class FluidNode(urwid.ParentNode, PathItem):
-    log = logging.getLogger('FluidNode')
+class FluidInstrumentNode(urwid.ParentNode, PathItem):
+    log = logging.getLogger('FluidInstrumentNode')
     attrlist = ('!name', 'font', 'bank', 'prog')
 
     def __init__(self, name='FluidSynth', font=None, bank=None, prog=None, parent=None):
@@ -57,7 +57,7 @@ class FluidNode(urwid.ParentNode, PathItem):
         return tuple(self._children.keys())
 
     def load_widget(self):
-        return FluidWidget(self)
+        return FluidInstrumentWidget(self)
 
     def _invalidate(self):
         self.get_widget().update()
@@ -229,17 +229,17 @@ class PCFApp:
     def build_inst_tree(self):
         # reset tree
         self.inst_tree = dict()
-        self.inst_tree['/'] = top = FluidNode('FluidSynth')
+        self.inst_tree['/'] = top = FluidInstrumentNode('FluidSynth')
 
         # add soundfont nodes
         for font,name,path in self.font_list:
-            n = FluidNode(path, font, parent=top)
+            n = FluidInstrumentNode(path, font, parent=top)
             self.inst_tree[n.path] = n
 
         # add instrument nodes
         for name,font,bank,prog in self.inst_list:
             fp = PathItem(font).path
-            n = FluidNode(f'{int(bank):03d}-{int(prog):03d} {name}',
+            n = FluidInstrumentNode(f'{int(bank):03d}-{int(prog):03d} {name}',
                 font,bank,prog, parent=self.inst_tree[fp])
             self.inst_tree[n.path] = n
 
