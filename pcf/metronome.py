@@ -9,6 +9,15 @@ log = logging.getLogger('pcf.metronome')
 
 from pcf.beatclock import BeatClock
 
+class Note:
+    def __init__(self, note=60, velocity=112, channel=1):
+        self.note     = max(0, min(127, note))
+        self.velocity = max(0, min(127, velocity))
+        self.channel  = max(0, min(15, channel))
+
+        self.on  = [0x90 + self.channel, self.note, self.velocity]
+        self.off = [0x80 + self.channel, self.note, self.velocity]
+
 class Metronome:
     def __init__(self, *notes, channel=1, beats_per_minute=120):
         ''' channel and beats_per_minute are hopefully self explanatory
@@ -19,24 +28,27 @@ class Metronome:
             m = Metronome( (60,120), (60,90), (60,90) ) # nice little waltz
 
         '''
-        if not (0 <= channel <= 15):
-            channel = 1
         self.channel = channel
 
         if not notes:
             notes = (60,)
-        self.notes = notes
+        self.notes = list()
         self.npos = 0
+        for n in notes:
+            if isinstance(n, Note):
+                self.notes.append(n)
+            elif isinstance(n, (list,tuple)):
+                self.notes.append(Note(*n))
+            else:
+                self.notes.append(Note(n))
 
         self.beat_duration = (0.95 / beats_per_minute)
+        if not (0 < self.beat_duration < 1):
+            self.beat_duration = 0.25
 
         self.beatclock = BeatClock(callback=self.fire, beats_per_minute=beats_per_minute)
         self.midiout = rtmidi.MidiOut()
         self.midiout.open_virtual_port("pcf.metronome")
-
-        if not (0 < self.beat_duration < 1):
-            self.beat_duration = 0.1
-
         self.condition = False
 
     def start(self):
@@ -54,15 +66,10 @@ class Metronome:
         # need for it.
 
         note = self.notes[self.npos]
-        vel = 112
-
-        if isinstance(note, (list,tuple)):
-            note,vel = note
-
         self.npos = (self.npos + 1) % len(self.notes)
 
-        self.midiout.send_message([0x90 + self.channel, note, vel])
+        self.midiout.send_message(note.on)
         time.sleep(self.beat_duration)
-        self.midiout.send_message([0x80 + self.channel, note, 0])
+        self.midiout.send_message(note.off)
 
         return self.condition
