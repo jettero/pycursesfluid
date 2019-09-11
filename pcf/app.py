@@ -86,9 +86,14 @@ class PCFApp:
         self.mouse_bookmarks = set()
         self.reload()
 
-        self.listbox = urwid.TreeListBox(self.walker)
-        self.header  = urwid.Text('FluidSynth Instruments')
-        self.footer  = urwid.Text('')
+        self.listbox  = urwid.TreeListBox(self.walker)
+        self.header   = urwid.Text('FluidSynth Instruments')
+        self.channels = urwid.Text('')
+        self.help     = urwid.Text('')
+        self.footer   = urwid.Columns([
+            urwid.Padding( self.help, 'left', width=('relative', 100), left=1, right=1 ),
+            urwid.Padding( self.channels, 'right', width=16, min_width=16, left=1, right=1 ),
+        ])
 
         la = urwid.AttrWrap(self.listbox, 'body')
         ha = urwid.AttrWrap(self.header,  'head')
@@ -141,17 +146,25 @@ class PCFApp:
         except TypeError:
             pass
 
-    def update_footer(self, *msg, draw_now=None):
+    def update_footer(self, msg=None):
+        if msg is None:
+            msg = [
+                ('active', '$'), ('foot', ':4/4 beat '),
+                ('active', '#'),  ('foot', ':3/4 beat '),
+                ('active', '0…f'), ('foot', ':±chan '),
+                ('active', '_'), ('foot', ':-all '),
+                ('active', '+'), ('foot', ':+all '),
+            ]
+        elif msg is not None:
+            msg = ('foot', msg)
         attr_txt = list()
         for i in range(16):
             c = 'active' if i in self.active_channels else 'inactive'
             attr_txt.append( (c,f'{i:x}') )
-        for m in msg:
-            attr_txt += [ '  ', ('foot', m) ]
-        self.footer.set_text( attr_txt )
-        if msg and draw_now is None:
-            draw_now = True
-        if draw_now:
+        self.channels.set_text( attr_txt )
+        if msg is not None:
+            self.help.set_text( msg )
+        if hasattr(self, 'loop'):
             self.loop.draw_screen()
 
     def push_current_node_to_active_channels(self):
@@ -191,10 +204,10 @@ class PCFApp:
                 self.reload()
                 self.update_footer()
 
-            elif k == '=':
+            elif k in ('+', '='):
                 self.active_channels = set(range(16))
                 self.update_footer()
-            elif k == '_':
+            elif k in ('-', '_'):
                 self.active_channels.clear()
                 self.update_footer()
 
