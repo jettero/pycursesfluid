@@ -5,6 +5,7 @@ import logging
 import urwid
 from pcf.fluidsynth import FluidSynth
 from pcf.misc import PathItem, RangySet
+from pcf.metronome import Metronome
 
 class FluidInstrumentWidget(urwid.TreeWidget):
     log = logging.getLogger('FluidInstrumentWidget')
@@ -100,6 +101,8 @@ class PCFApp:
         fa = urwid.AttrWrap(self.footer,  'foot')
 
         self.view = urwid.Frame( la, header=ha, footer=fa )
+
+        self.metronome = None
 
         self.update_footer()
 
@@ -200,6 +203,22 @@ class PCFApp:
         else:
             if k in ('q', 'Q'):
                 raise urwid.ExitMainLoop()
+
+            elif k == '#':
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome = None
+                else:
+                    self.metronome = Metronome( (60,127), (60,90), (60,90), beats_per_minute=75)
+                    self.metronome.start()
+
+            elif k == '$':
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome = None
+                else:
+                    self.metronome = Metronome( (60,127), (60,90), (60,90), (60,90), beats_per_minute=75)
+                    self.metronome.start()
 
             elif k == 'r':
                 self.update_footer(f'reloading …')
