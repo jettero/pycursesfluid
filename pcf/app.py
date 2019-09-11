@@ -149,6 +149,7 @@ class PCFApp:
     def update_footer(self, msg=None):
         if msg is None:
             msg = [
+                ('active', '<spc>'), ('foot', ':set-inst '),
                 ('active', '0…f'), ('foot', ':±chan '),
                 ('active', '_'), ('foot', ':-all '),
                 ('active', '+'), ('foot', ':+all '),
