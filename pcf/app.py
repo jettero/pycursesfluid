@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import time
 import logging
 import urwid
 from pcf.fluidsynth import FluidSynth
@@ -72,6 +73,7 @@ class PCFApp:
     palette = [ ('body', 'light gray', 'default'),
                 ('head', 'light gray', 'dark blue'),
                 ('foot', 'light gray', 'dark blue'),
+                ('button', 'light red', 'dark blue'),
                 ('flagged', 'dark green', 'default'),
                 ('focus', 'white', 'dark gray'),
                 ('flagged focus', 'light green', 'dark gray'),
@@ -92,8 +94,8 @@ class PCFApp:
         self.channels = urwid.Text('')
         self.help     = urwid.Text('')
         self.footer   = urwid.Columns([
-            urwid.Padding( self.help, 'left', width=('relative', 100), left=1, right=1 ),
-            urwid.Padding( self.channels, 'right', width=16, min_width=16, left=1, right=1 ),
+            urwid.Padding( self.help, 'left', width=('relative', 100) ),
+            urwid.Padding( self.channels, 'right', width=16, min_width=16 ),
         ])
 
         la = urwid.AttrWrap(self.listbox, 'body')
@@ -103,6 +105,7 @@ class PCFApp:
         self.view = urwid.Frame( la, header=ha, footer=fa )
 
         self.metronome = None
+        self.beats_per_minute = 75
 
         self.update_footer()
 
@@ -151,14 +154,17 @@ class PCFApp:
 
     def update_footer(self, msg=None):
         if msg is None:
+            time.sleep(0.5)
             msg = [
-                ('active', '<spc>'), ('foot', ':set-inst '),
-                ('active', '0…f'), ('foot', ':±chan '),
-                ('active', '_'), ('foot', ':-all '),
-                ('active', '+'), ('foot', ':+all '),
-                ('active', '$'), ('foot', ':4/4 beat '),
-                ('active', '#'), ('foot', ':3/4 beat '),
-                ('active', 'r'), ('foot', ':reload '),
+                ('button', '<spc>'), ('foot', ':set-inst '),
+                ('button', '0…f'), ('foot', ':±chan '),
+                ('button', '_'), ('foot', ':-all '),
+                ('button', '+'), ('foot', ':+all '),
+                ('button', 'r'), ('foot', ':reload '),
+                ('button', '$'), ('foot', ':4/4 beat '),
+                ('button', '#'), ('foot', ':3/4 beat '),
+                ('button', '['), ('foot', ':-15 bpm '),
+                ('button', ']'), ('foot', ':+15 bpm '),
             ]
         elif msg is not None:
             msg = ('foot', msg)
@@ -209,7 +215,8 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome( (60,127), (60,90), (60,90), beats_per_minute=75)
+                    self.metronome = Metronome( (60,127), (60,90), (60,90),
+                        beats_per_minute=self.beats_per_minute)
                     self.metronome.start()
 
             elif k == '$':
@@ -217,7 +224,26 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome( (60,127), (60,90), (60,90), (60,90), beats_per_minute=75)
+                    self.metronome = Metronome( (60,127), (60,90), (60,90), (60,90),
+                        beats_per_minute=self.beats_per_minute)
+                    self.metronome.start()
+
+            elif k == '[':
+                self.beats_per_minute -= 15
+                self.update_footer(f'{self.beats_per_minute} bpm')
+                self.update_footer()
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome.beats_per_minute = self.beats_per_minute
+                    self.metronome.start()
+
+            elif k == ']':
+                self.beats_per_minute += 15
+                self.update_footer(f'{self.beats_per_minute} bpm')
+                self.update_footer()
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome.beats_per_minute = self.beats_per_minute
                     self.metronome.start()
 
             elif k == 'r':

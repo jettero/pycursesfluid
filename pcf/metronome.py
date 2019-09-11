@@ -42,14 +42,24 @@ class Metronome:
             else:
                 self.notes.append(Note(n))
 
-        self.beat_duration = (0.95 / beats_per_minute)
-        if not (0 < self.beat_duration < 1):
-            self.beat_duration = 0.25
-
         self.beatclock = BeatClock(callback=self.fire, beats_per_minute=beats_per_minute)
+        self.beats_per_minute = beats_per_minute
         self.midiout = rtmidi.MidiOut()
         self.midiout.open_virtual_port("pcf.metronome")
         self.condition = False
+
+    @property
+    def beats_per_minute(self):
+        return self.beatclock.beats_per_minute
+
+    @beats_per_minute.setter
+    def beats_per_minute(self, v):
+        self.beat_duration = (0.95 / v)
+        if self.beat_duration < 0.1:
+            self.beat_duration = 0.1
+        elif self.beat_duration > 0.9:
+            self.beat_duration = 0.9
+        self.beatclock.beats_per_minute = v
 
     def start(self):
         self.condition = True
