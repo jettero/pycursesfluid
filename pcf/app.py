@@ -215,7 +215,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome( (60,127), (60,90), (60,90),
+                    self.metronome = Metronome( (60,127), (60,80), (60,80),
                         beats_per_minute=self.beats_per_minute)
                     self.metronome.start()
 
@@ -224,7 +224,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome( (60,127), (60,90), (60,90), (60,90),
+                    self.metronome = Metronome( (60,127), (60,80), (60,80), (60,80),
                         beats_per_minute=self.beats_per_minute)
                     self.metronome.start()
 
