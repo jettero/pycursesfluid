@@ -149,11 +149,12 @@ class PCFApp:
     def update_footer(self, msg=None):
         if msg is None:
             msg = [
-                ('active', '$'), ('foot', ':4/4 beat '),
-                ('active', '#'),  ('foot', ':3/4 beat '),
                 ('active', '0…f'), ('foot', ':±chan '),
                 ('active', '_'), ('foot', ':-all '),
                 ('active', '+'), ('foot', ':+all '),
+                ('active', '$'), ('foot', ':4/4 beat '),
+                ('active', '#'), ('foot', ':3/4 beat '),
+                ('active', 'r'), ('foot', ':reload '),
             ]
         elif msg is not None:
             msg = ('foot', msg)
@@ -207,7 +208,7 @@ class PCFApp:
             elif k in ('+', '='):
                 self.active_channels = set(range(16))
                 self.update_footer()
-            elif k in ('-', '_'):
+            elif k in ('-', '_'): # '-' doesn't actually work, it's a default binding for something else
                 self.active_channels.clear()
                 self.update_footer()
 
