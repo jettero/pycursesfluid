@@ -156,7 +156,8 @@ class PCFApp:
         if cur_node:
             start_key = cur_node.path
         else:
-            start_key = PathItem(*self.chan_list[0][2:]).path
+            start_key = '/'
+            # start_key = PathItem(*self.chan_list[0][2:]).path
 
         self.start_key = start_key
         self.start_node = self.inst_tree[ start_key ]
