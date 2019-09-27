@@ -40,6 +40,7 @@ class FluidInstrumentWidget(urwid.TreeWidget):
         iw._invalidate()
         self._invalidate()
         self.update_w()
+        self.update_expanded_icon()
 
     def update_w(self):
         if self.get_node().chan:
