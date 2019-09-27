@@ -166,7 +166,7 @@ class PCFApp:
             self.listbox.body = self.walker
 
         for node in self.inst_tree.values():
-            if isinstance(node, FluidFontNode) and not node in (self.start_node, self.start_node.get_parent()):
+            if isinstance(node, FluidFontNode) and not node in (self.top_node, self.start_node, self.start_node.get_parent()):
                 node.get_widget().fold()
 
     def main(self):
@@ -332,11 +332,11 @@ class PCFApp:
     def build_inst_tree(self):
         # reset tree
         self.inst_tree = dict()
-        self.inst_tree['/'] = top = FluidFontNode('FluidSynth')
+        self.inst_tree['/'] = self.top_node = FluidFontNode('FluidSynth')
 
         # add soundfont nodes
         for font,name,path in self.font_list:
-            n = FluidFontNode(path, font, parent=top)
+            n = FluidFontNode(path, font, parent=self.top_node)
             self.inst_tree[n.path] = n
 
         # add instrument nodes
