@@ -23,6 +23,17 @@ class FluidInstrumentWidget(urwid.TreeWidget):
         self.flagged = False
         self.update_w()
 
+    def selectable(self):
+        return True
+
+    def fold(self):
+        self.expanded = False
+        self.update()
+
+    def unfold(self):
+        self.expanded = True
+        self.update()
+
     def get_display_text(self):
         n = self.get_node()
         txt = n.name
@@ -50,20 +61,17 @@ class FluidInstrumentWidget(urwid.TreeWidget):
             self._w.attr = 'body'
             self._w.focus_attr = 'focus'
 
-class FluidInstrumentNode(urwid.ParentNode, PathItem):
+class FluidInstrumentNode(urwid.TreeNode, PathItem):
     log = logging.getLogger('FluidInstrumentNode')
     attrlist = ('!name', 'font', 'bank', 'prog')
 
     def __init__(self, name='FluidSynth', font=None, bank=None, prog=None, parent=None):
         PathItem.__init__(self, name, font, bank, prog)
-        urwid.ParentNode.__init__(self, name, key=self.path, parent=parent)
+        urwid.TreeNode.__init__(self, name, key=self.path, parent=parent)
         self.chan = RangySet()
 
         if parent is not None:
             parent.set_child_node(self.path, self)
-
-    def get_child_keys(self):
-        return tuple(self._children.keys())
 
     def load_widget(self):
         return FluidInstrumentWidget(self)
@@ -73,6 +81,29 @@ class FluidInstrumentNode(urwid.ParentNode, PathItem):
         # w = self.get_widget()
         # w._invalidate()
         # w.get_inner_widget()
+
+class FluidFontNode(FluidInstrumentNode, urwid.ParentNode):
+    log = logging.getLogger('FluidFontNode')
+    attrlist = ('!name', 'font', 'bank', 'prog')
+
+    def __init__(self, name='FluidSynth', font=None, bank=None, prog=None, parent=None):
+        PathItem.__init__(self, name, font, bank, prog)
+        urwid.ParentNode.__init__(self, name, key=self.path, parent=parent)
+
+        if parent is not None:
+            parent.set_child_node(self.path, self)
+
+    def get_child_keys(self):
+        return tuple(self._children.keys())
+
+    @property
+    def chan(self):
+        ret = RangySet()
+        for k in self.get_child_keys():
+            n = self.get_child_node(k)
+            for i in n.chan:
+                ret.add(i)
+        return ret
 
 ACTUAL_SHOW_CURSOR = urwid.escape.SHOW_CURSOR
 class PCFApp:
@@ -127,11 +158,16 @@ class PCFApp:
         else:
             start_key = PathItem(*self.chan_list[0][2:]).path
 
+        self.start_key = start_key
         self.start_node = self.inst_tree[ start_key ]
 
         self.walker = urwid.TreeWalker(self.start_node)
         if self.listbox is not None:
             self.listbox.body = self.walker
+
+        for node in self.inst_tree.values():
+            if isinstance(node, FluidFontNode) and not node in (self.start_node, self.start_node.get_parent()):
+                node.get_widget().fold()
 
     def main(self):
         urwid.escape.SHOW_CURSOR = ''
@@ -296,11 +332,11 @@ class PCFApp:
     def build_inst_tree(self):
         # reset tree
         self.inst_tree = dict()
-        self.inst_tree['/'] = top = FluidInstrumentNode('FluidSynth')
+        self.inst_tree['/'] = top = FluidFontNode('FluidSynth')
 
         # add soundfont nodes
         for font,name,path in self.font_list:
-            n = FluidInstrumentNode(path, font, parent=top)
+            n = FluidFontNode(path, font, parent=top)
             self.inst_tree[n.path] = n
 
         # add instrument nodes
