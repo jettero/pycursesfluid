@@ -8,6 +8,12 @@ from pcf.fluidsynth import FluidSynth
 from pcf.misc import PathItem, RangySet
 from pcf.metronome import Metronome
 
+WALTZ = ( ((35,50), (45,33), (46,33)),
+          ((35,33),),
+          ((35,33),),
+        )
+ROCK = WALTZ + WALTZ[-1]
+
 class FluidInstrumentWidget(urwid.TreeWidget):
     log = logging.getLogger('FluidInstrumentWidget')
 
@@ -215,10 +221,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome( 
-                        ((35,100), (45,100)),
-                        ((35,90),),
-                        ((35,90),),
+                    self.metronome = Metronome(*WALTZ,
                         beats_per_minute=self.beats_per_minute)
                     self.metronome.start()
 
@@ -227,11 +230,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(
-                        ((35,100), (45,100)),
-                        ((35,90),),
-                        ((35,90),),
-                        ((35,90),),
+                    self.metronome = Metronome(*ROCK,
                         beats_per_minute=self.beats_per_minute)
                     self.metronome.start()
 
