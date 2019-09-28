@@ -12,7 +12,7 @@ WALTZ = ( ((35,50), (45,33), (46,33)),
           ((35,33),),
           ((35,33),),
         )
-ROCK = WALTZ + WALTZ[-1]
+ROCK = WALTZ + (WALTZ[-1],)
 
 class FluidInstrumentWidget(urwid.TreeWidget):
     log = logging.getLogger('FluidInstrumentWidget')
