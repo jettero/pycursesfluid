@@ -29,10 +29,14 @@ class FluidInstrumentWidget(urwid.TreeWidget):
     def fold(self):
         self.expanded = False
         self.update()
+        self.update_expanded_icon() # ← only works on foldable widgets
+        # XXX: need to make a FluidFontWidget because this behavior is
+        # different between instruments and fonts
 
     def unfold(self):
         self.expanded = True
         self.update()
+        self.update_expanded_icon() # ← only works on foldable widgets
 
     def get_display_text(self):
         n = self.get_node()
@@ -51,7 +55,6 @@ class FluidInstrumentWidget(urwid.TreeWidget):
         iw._invalidate()
         self._invalidate()
         self.update_w()
-        self.update_expanded_icon()
 
     def update_w(self):
         if self.get_node().chan:
