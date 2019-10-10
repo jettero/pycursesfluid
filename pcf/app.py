@@ -8,11 +8,29 @@ from pcf.fluidsynth import FluidSynth
 from pcf.misc import PathItem, RangySet
 from pcf.metronome import Metronome
 
-WALTZ = ( ((35,50), (45,33), (46,33)),
-          ((35,33),),
-          ((35,33),),
+FLOOR_TOM = 35
+KICK = 45
+CCRASH = 46
+SNARE = 38
+HHAT = 42
+RIMS = 37
+
+_34T = ( ((FLOOR_TOM,80), (KICK,73), ), # (CCRASH,73)),
+          ((FLOOR_TOM,73),),
+          ((FLOOR_TOM,73),),
         )
-ROCK = WALTZ + (WALTZ[-1],)
+_44T = _34T + (_34T[-1],)
+
+_448T = (
+    ((HHAT,50), (FLOOR_TOM,80), (KICK,73)), # 1
+    ((HHAT,30),),
+    ((HHAT,50), (FLOOR_TOM,73)), # 2
+    ((HHAT,30),),
+    ((HHAT,50), (FLOOR_TOM,73)), # 3
+    ((HHAT,30),),
+    ((HHAT,50), (FLOOR_TOM,73)), # 4
+    ((HHAT,30),),
+)
 
 class FluidInstrumentWidget(urwid.TreeWidget):
     log = logging.getLogger('FluidInstrumentWidget')
@@ -209,6 +227,7 @@ class PCFApp:
                 ('button', '+'), ('foot', ':+all '),
                 ('button', 'r'), ('foot', ':reload '),
                 ('button', '$'), ('foot', ':4/4 beat '),
+                ('button', '%'), ('foot', ':4/4,8 beat '),
                 ('button', '#'), ('foot', ':3/4 beat '),
                 ('button', '['), ('foot', ':-15 bpm '),
                 ('button', ']'), ('foot', ':+15 bpm '),
@@ -262,7 +281,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(*WALTZ,
+                    self.metronome = Metronome(*_34T,
                         beats_per_minute=self.beats_per_minute)
                     self.metronome.start()
 
@@ -271,8 +290,17 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(*ROCK,
+                    self.metronome = Metronome(*_44T,
                         beats_per_minute=self.beats_per_minute)
+                    self.metronome.start()
+
+            elif k == '%':
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome = None
+                else:
+                    self.metronome = Metronome(*_448T,
+                        beats_per_minute=2*self.beats_per_minute)
                     self.metronome.start()
 
             elif k == '[':
