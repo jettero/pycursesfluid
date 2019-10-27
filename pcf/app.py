@@ -8,6 +8,7 @@ from pcf.fluidsynth import FluidSynth
 from pcf.misc import PathItem, RangySet
 from pcf.metronome import Metronome
 
+DRUM_CHANNEL = 9
 FLOOR_TOM = 35
 KICK = 45
 CCRASH = 46
@@ -282,7 +283,8 @@ class PCFApp:
                     self.metronome = None
                 else:
                     self.metronome = Metronome(*_34T,
-                        beats_per_minute=self.beats_per_minute)
+                        beats_per_minute=self.beats_per_minute,
+                        channel=DRUM_CHANNEL)
                     self.metronome.start()
 
             elif k == '$':
@@ -291,7 +293,8 @@ class PCFApp:
                     self.metronome = None
                 else:
                     self.metronome = Metronome(*_44T,
-                        beats_per_minute=self.beats_per_minute)
+                        beats_per_minute=self.beats_per_minute,
+                        channel=DRUM_CHANNEL)
                     self.metronome.start()
 
             elif k == '%':
@@ -300,7 +303,8 @@ class PCFApp:
                     self.metronome = None
                 else:
                     self.metronome = Metronome(*_448T,
-                        beats_per_minute=2*self.beats_per_minute)
+                        beats_per_minute=2*self.beats_per_minute,
+                        channel=DRUM_CHANNEL)
                     self.metronome.start()
 
             elif k == '[':

@@ -10,7 +10,7 @@ log = logging.getLogger('pcf.metronome')
 from pcf.beatclock import BeatClock
 
 class Note:
-    def __init__(self, note=60, velocity=112, channel=1):
+    def __init__(self, note=60, velocity=112, channel=9):
         self.note     = max(0, min(127, note))
         self.velocity = max(0, min(127, velocity))
         self.channel  = max(0, min(15, channel))
