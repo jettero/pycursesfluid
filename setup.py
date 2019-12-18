@@ -18,7 +18,7 @@ class PyTest(TestCommand):
         errno = pytest.main(shlex.split(self.pytest_args))
         sys.exit(errno)
 
-mods = [ 'urwid', 'rtmidi' ]
+mods = [ 'urwid', 'python-rtmidi' ]
 
 setup(name='pycursesfluid',
     use_scm_version = {
