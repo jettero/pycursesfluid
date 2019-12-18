@@ -33,6 +33,15 @@ _448T = (
     ((HHAT,30),),
 )
 
+_348T = (
+    ((HHAT,50), (FLOOR_TOM,80), (KICK,73)), # 1
+    ((HHAT,30),),
+    ((HHAT,50), (FLOOR_TOM,73)), # 2
+    ((HHAT,30),),
+    ((HHAT,50), (FLOOR_TOM,73)), # 3
+    ((HHAT,30),),
+)
+
 class FluidInstrumentWidget(urwid.TreeWidget):
     log = logging.getLogger('FluidInstrumentWidget')
 
@@ -229,6 +238,7 @@ class PCFApp:
                 ('button', 'r'), ('foot', ':reload '),
                 ('button', '$'), ('foot', ':4/4 beat '),
                 ('button', '%'), ('foot', ':4/4,8 beat '),
+                ('button', '^'), ('foot', ':3/4,8 beat '),
                 ('button', '#'), ('foot', ':3/4 beat '),
                 ('button', '['), ('foot', ':-15 bpm '),
                 ('button', ']'), ('foot', ':+15 bpm '),
@@ -303,6 +313,16 @@ class PCFApp:
                     self.metronome = None
                 else:
                     self.metronome = Metronome(*_448T,
+                        beats_per_minute=2*self.beats_per_minute,
+                        channel=DRUM_CHANNEL)
+                    self.metronome.start()
+
+            elif k == '^':
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome = None
+                else:
+                    self.metronome = Metronome(*_348T,
                         beats_per_minute=2*self.beats_per_minute,
                         channel=DRUM_CHANNEL)
                     self.metronome.start()
