@@ -16,10 +16,12 @@ SNARE = 38
 HHAT = 42
 RIMS = 37
 
+_M = ( ((FLOOR_TOM,73),), )
+
 _34T = ( ((FLOOR_TOM,80), (KICK,73), ), # (CCRASH,73)),
-          ((FLOOR_TOM,73),),
-          ((FLOOR_TOM,73),),
-        )
+         ((FLOOR_TOM,73),),
+         ((FLOOR_TOM,73),),
+       )
 _44T = _34T + (_34T[-1],)
 
 _448T = (
@@ -239,6 +241,7 @@ class PCFApp:
                 ('button', '$'), ('foot', ':4/4 beat '),
                 ('button', '%'), ('foot', ':4/4,8 beat '),
                 ('button', '^'), ('foot', ':3/4,8 beat '),
+                ('button', '@'), ('foot', ':pure bpm '),
                 ('button', '#'), ('foot', ':3/4 beat '),
                 ('button', '['), ('foot', ':-15 bpm '),
                 ('button', ']'), ('foot', ':+15 bpm '),
@@ -286,6 +289,16 @@ class PCFApp:
         else:
             if k in ('q', 'Q'):
                 raise urwid.ExitMainLoop()
+
+            elif k == '@':
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome = None
+                else:
+                    self.metronome = Metronome(*_M,
+                        beats_per_minute=self.beats_per_minute,
+                        channel=DRUM_CHANNEL)
+                    self.metronome.start()
 
             elif k == '#':
                 if self.metronome:
