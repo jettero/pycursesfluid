@@ -176,7 +176,7 @@ class PCFApp:
         self.view = urwid.Frame( la, header=ha, footer=fa )
 
         self.metronome = None
-        self.beats_per_minute = 75
+        self.beats_per_minute = 80
 
         self.update_footer()
 
@@ -243,8 +243,8 @@ class PCFApp:
                 ('button', '^'), ('foot', ':3/4,8 beat '),
                 ('button', '@'), ('foot', ':pure bpm '),
                 ('button', '#'), ('foot', ':3/4 beat '),
-                ('button', '['), ('foot', ':-15 bpm '),
-                ('button', ']'), ('foot', ':+15 bpm '),
+                ('button', '['), ('foot', ':-10 bpm '),
+                ('button', ']'), ('foot', ':+10 bpm '),
             ]
         elif msg is not None:
             msg = ('foot', msg)
@@ -341,7 +341,7 @@ class PCFApp:
                     self.metronome.start()
 
             elif k == '[':
-                self.beats_per_minute -= 15
+                self.beats_per_minute -= 10
                 self.update_footer(f'{self.beats_per_minute} bpm')
                 self.update_footer()
                 if self.metronome:
@@ -350,7 +350,7 @@ class PCFApp:
                     self.metronome.start()
 
             elif k == ']':
-                self.beats_per_minute += 15
+                self.beats_per_minute += 10
                 self.update_footer(f'{self.beats_per_minute} bpm')
                 self.update_footer()
                 if self.metronome:
