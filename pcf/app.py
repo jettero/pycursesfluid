@@ -16,7 +16,11 @@ SNARE = 38
 HHAT = 42
 RIMS = 37
 
+metro_vol = 0.7
+
 _M = ( ((FLOOR_TOM,73),), )
+_B = ( ((HHAT,50),(FLOOR_TOM,73)),
+       ((HHAT,50),), )
 
 _34T = ( ((FLOOR_TOM,80), (KICK,73), ), # (CCRASH,73)),
          ((FLOOR_TOM,73),),
@@ -43,6 +47,12 @@ _348T = (
     ((HHAT,50), (FLOOR_TOM,73)), # 3
     ((HHAT,30),),
 )
+
+def volumize(thing):
+    return max(min(250, int(thing * metro_vol)), 5)
+
+def volume_adjust(scheme):
+    return tuple( tuple( (inst,volumize(vel)) for inst,vel in time_step ) for time_step in scheme )
 
 class FluidInstrumentWidget(urwid.TreeWidget):
     log = logging.getLogger('FluidInstrumentWidget')
@@ -242,6 +252,7 @@ class PCFApp:
                 ('button', '%'), ('foot', ':4/4,8 beat '),
                 ('button', '^'), ('foot', ':3/4,8 beat '),
                 ('button', '@'), ('foot', ':pure bpm '),
+                ('button', '!'), ('foot', ':pure bpm + 8th'),
                 ('button', '#'), ('foot', ':3/4 beat '),
                 ('button', '['), ('foot', ':-10 bpm '),
                 ('button', ']'), ('foot', ':+10 bpm '),
@@ -290,12 +301,22 @@ class PCFApp:
             if k in ('q', 'Q'):
                 raise urwid.ExitMainLoop()
 
+            elif k == '!':
+                if self.metronome:
+                    self.metronome.stop()
+                    self.metronome = None
+                else:
+                    self.metronome = Metronome(*volume_adjust(_B),
+                        beats_per_minute=2*self.beats_per_minute,
+                        channel=DRUM_CHANNEL)
+                    self.metronome.start()
+
             elif k == '@':
                 if self.metronome:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(*_M,
+                    self.metronome = Metronome(*volume_adjust(_M),
                         beats_per_minute=self.beats_per_minute,
                         channel=DRUM_CHANNEL)
                     self.metronome.start()
@@ -305,7 +326,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(*_34T,
+                    self.metronome = Metronome(*volume_adjust(_34T),
                         beats_per_minute=self.beats_per_minute,
                         channel=DRUM_CHANNEL)
                     self.metronome.start()
@@ -315,7 +336,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(*_44T,
+                    self.metronome = Metronome(*volume_adjust(_44T),
                         beats_per_minute=self.beats_per_minute,
                         channel=DRUM_CHANNEL)
                     self.metronome.start()
@@ -325,7 +346,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(*_448T,
+                    self.metronome = Metronome(*volume_adjust(_448T),
                         beats_per_minute=2*self.beats_per_minute,
                         channel=DRUM_CHANNEL)
                     self.metronome.start()
@@ -335,7 +356,7 @@ class PCFApp:
                     self.metronome.stop()
                     self.metronome = None
                 else:
-                    self.metronome = Metronome(*_348T,
+                    self.metronome = Metronome(*volume_adjust(_348T),
                         beats_per_minute=2*self.beats_per_minute,
                         channel=DRUM_CHANNEL)
                     self.metronome.start()
